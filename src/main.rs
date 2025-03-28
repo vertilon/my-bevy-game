@@ -4,16 +4,19 @@ use bevy::{
 };
 
 
-const BACKGROUND_COLOR: Color = Color::srgb(0.9, 0.9, 0.9);
+const BACKGROUND_COLOR: Color = Color::srgb(0.1, 0.1, 0.1);
 
-const BUBBLES_NUMBER: u32 = 30;
+const BUBBLES_NUMBER: u32 = 115;
 
 fn main() {
     App::new()
         .add_plugins(DefaultPlugins)
         .insert_resource(ClearColor(BACKGROUND_COLOR))
         .add_systems(Startup, setup)
-        .add_systems(Update, handle_mouse)
+        .add_systems(Update, (
+            handle_mouse,
+            spawn_bubbles.run_if(run_if_no_bubbles),
+        ))
         .run();
 }
 
@@ -39,6 +42,15 @@ fn setup(
     let pop_sound = asset_server.load("sounds/pop.ogg");
     commands.insert_resource(ClickSound(pop_sound));
 
+    spawn_bubbles(commands, q_windows, meshes, materials);
+        
+}
+fn spawn_bubbles(
+    mut commands: Commands,
+    q_windows: Query<&Window, With<PrimaryWindow>>,
+    mut meshes: ResMut<Assets<Mesh>>,
+    mut materials: ResMut<Assets<ColorMaterial>>,
+) {
     // Bubbles:
     for _ in 0..BUBBLES_NUMBER {
         let color = Color::srgb(
@@ -63,7 +75,6 @@ fn setup(
             },
         ));
     }
-        
 }
 
 fn handle_mouse(
@@ -103,6 +114,11 @@ fn handle_mouse(
             _ => {}
         }
     }
+}
+fn run_if_no_bubbles(
+    q_bubbles: Query<&Transform, With<Bubble>>,
+) -> bool {
+    q_bubbles.iter().count() == 0
 }
 
 fn window_to_world(
